@@ -113,12 +113,14 @@ in
   config = mkIf (cfg.trafos != { }) {
     system.activationScripts.scalpelCreateStore = {
       text = ''
-        echo "[scalpel] Ensuring existance of ${cfg.secretsDir}"
-        mkdir -p ${cfg.secretsDir}
-        grep -q "${cfg.secretsDir} ramfs" /proc/mounts || mount -t ramfs none "${cfg.secretsDir}" -o nodev,nosuid,mode=0751
+        if grep -q "${cfg.secretsDir} ramfs" /proc/mounts; then
+          echo "[scalpel] Removing ${cfg.secretsDir}"
+          umount ${cfg.secretsDir}
+        fi
 
-        echo "[scalpel] Clearing old secrets from ${cfg.secretsDir}"
-        rm -rf ${cfg.secretsDir}/{*,.*}
+        echo "[scalpel] Creating ${cfg.secretsDir}"
+        mkdir -p ${cfg.secretsDir}
+        mount -t ramfs none "${cfg.secretsDir}" -o nodev,nosuid,mode=0751
       '';
       deps = [ "specialfs" ];
     };
